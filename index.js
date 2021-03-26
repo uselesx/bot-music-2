@@ -2,7 +2,7 @@ const Discord = require('discord.js'),
     DisTube = require('distube'),
     bot = new Discord.Client(),
     config = {
-        prefix: ".",
+        prefix: "$",
        
     };
 
