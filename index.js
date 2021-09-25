@@ -1,78 +1,72 @@
-const Discord = require('discord.js'),
-    DisTube = require('distube'),
-    bot = new Discord.Client(),
-    config = {
-        prefix: "$",
-       
-    };
+const Discord = require("discord.js");
+const colors = require("colors");
+const Enmap = require("enmap");
+const fs = require("fs");
+const Emoji = require("./botconfig/emojis.json")
+const config = require("./botconfig/config.json")
+const express = require('express');
 
-// Create a new DisTube
-const distube = new DisTube(bot, { searchSongs: true, emitNewSongOnly: true });
-
-bot.on('ready', () => {
-    console.log(`Logged in as ${bot.user.tag}!`);
+const app = express();
+const port = 3000 || 5000 
+app.get('/', (req, res) => {
+  res.send('Server Connected...')
 });
 
-bot.on("message", async (message) => {
-    if (message.author.bot) return;
-    if (!message.content.startsWith(config.prefix)) return;
-    const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
-    const command = args.shift();
-
-    if (command == "play")
-        distube.play(message, args.join(" "));
-
-    if (["repeat", "loop"].includes(command))
-        distube.setRepeatMode(message, parseInt(args[0]));
-
-    if (command == "stop") {
-        distube.stop(message);
-        message.channel.send("Stopped the music!");
-    }
-
-    if (command == "skip")
-        distube.skip(message);
-
-    if (command == "queue") {
-        let queue = distube.getQueue(message);
-        message.channel.send('Current queue:\n' + queue.songs.map((song, id) =>
-            `**${id + 1}**. ${song.name} - \`${song.formattedDuration}\``
-        ).slice(0, 10).join("\n"));
-    }
-
-    if ([`3d`, `bassboost`, `echo`, `karaoke`, `nightcore`, `vaporwave`].includes(command)) {
-        let filter = distube.setFilter(message, command);
-        message.channel.send("Current queue filter: " + (filter || "Off"));
-    }
+app.listen(port, () => {
+  const stringlength = 69;
+  console.log("\n")
+  console.log(`     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`.bold.brightGreen)
+  console.log(`     ┃ `.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length) + "┃".bold.brightGreen)
+  console.log(`     ┃ `.bold.brightGreen + `Server Running at https://localhost/${port}` .bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length - `Discord Bot is online!`.length) + "┃".bold.brightGreen)
+  console.log(`     ┃ `.bold.brightGreen + ` /--/ ${client.user.tag} /--/ `.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length - ` /--/ ${client.user.tag} /--/ `.length) + "┃".bold.brightGreen)
+  console.log(`     ┃ `.bold.brightGreen + " ".repeat(-1 + stringlength - ` ┃ `.length) + "┃".bold.brightGreen)
+  console.log(`     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`.bold.brightGreen)
 });
 
-// Queue status template
-const status = (queue) => `Volume: \`${queue.volume}%\` | Filter: \`${queue.filter || "Off"}\` | Loop: \`${queue.repeatMode ? queue.repeatMode == 2 ? "All Queue" : "This Song" : "Off"}\` | Autoplay: \`${queue.autoplay ? "On" : "Off"}\``;
+const client = new Discord.Client({
+  fetchAllMembers: false,
+  restTimeOffset: 0,
+  shards: "auto",
+  disableEveryone: true,
+  partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
+  presence: {
+    afk: false,
+    status : "Online",
+    activity: {
+      name: `${config.prefix}help || Inutile#8267`,
+      type: 'LISTENING',
+    },
+  }
+});
 
-// DisTube event listeners, more in the documentation page
-distube
-    .on("playSong", (message, queue, song) => message.channel.send(
-        `Playing \`${song.name}\` - \`${song.formattedDuration}\`\nRequested by: ${song.user}\n${status(queue)}`
-    ))
-    .on("addSong", (message, queue, song) => message.channel.send(
-        `Added ${song.name} - \`${song.formattedDuration}\` to the queue by ${song.user}`
-    ))
-    .on("playList", (message, queue, playlist, song) => message.channel.send(
-        `Play \`${playlist.name}\` playlist (${playlist.songs.length} songs).\nRequested by: ${song.user}\nNow playing \`${song.name}\` - \`${song.formattedDuration}\`\n${status(queue)}`
-    ))
-    .on("addList", (message, queue, playlist) => message.channel.send(
-        `Added \`${playlist.name}\` playlist (${playlist.songs.length} songs) to queue\n${status(queue)}`
-    ))
-    // DisTubeOptions.searchSongs = true
-    .on("searchResult", (message, result) => {
-        let i = 0;
-        message.channel.send(`**Choose an option from below**\n${result.map(song => `**${++i}**. ${song.name} - \`${song.formattedDuration}\``).join("\n")}\n*Enter anything else or wait 60 seconds to cancel*`);
-    })
-    // DisTubeOptions.searchSongs = true
-    .on("searchCancel", (message) => message.channel.send(`Searching canceled`))
-    .on("error", (message, e) => {
-        console.error(e)
-        message.channel.send("An error encountered: " + e);
-    });
+client.commands = new  Discord.Collection();
+client.aliases = new  Discord.Collection();
+client.events = new Discord.Collection();
+client.cooldowns = new Discord.Collection();
+client.categories = fs.readdirSync("./commands/");
 
-bot.login(process.env.token);
+client.setMaxListeners(50);
+require('events').defaultMaxListeners = 50;
+
+client.adenabled = true;
+
+
+//Loading discord-buttons
+const dbs = require('discord-buttons');
+dbs(client);
+
+function requirehandlers() {
+  client.basicshandlers = Array(
+    "extraevents", "loaddb", "command", "events", "erelahandler"
+  );
+  client.basicshandlers.forEach(handler => {
+    try { require(`./handlers/${handler}`)(client); } catch (e) { console.log(e) }
+  });
+} requirehandlers();
+
+
+
+
+client.login(require('./botconfig/config.json').token);
+
+module.exports.requirehandlers = requirehandlers;
